@@ -46,6 +46,19 @@ describe("SignUpForm", () => {
     ).toBeInTheDocument();
   });
 
+  // Sem method="post" o fallback do navegador é GET, e um submit nativo (quando
+  // o JS falha ou ainda não hidratou) joga a senha na URL, no histórico e nos
+  // logs de acesso.
+  it("usa method=post para nunca expor a senha na URL", () => {
+    render(<SignUpForm />);
+
+    const form = screen
+      .getByRole("button", { name: "Criar conta" })
+      .closest("form");
+
+    expect(form).toHaveAttribute("method", "post");
+  });
+
   it("avisa quando as senhas não coincidem e não chama a action", async () => {
     const user = userEvent.setup();
     render(<SignUpForm />);

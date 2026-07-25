@@ -28,6 +28,10 @@ export function LoginForm() {
   return (
     <form
       noValidate
+      // Se o JS falhar ou ainda não tiver hidratado, o navegador faz o submit
+      // nativo. Com o padrão (GET) a senha iria para a URL, o histórico e os
+      // logs de acesso; com POST, não.
+      method="post"
       onSubmit={form.handleSubmit((valores) => execute(valores))}
       className="space-y-6"
     >

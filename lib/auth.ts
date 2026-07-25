@@ -10,6 +10,10 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
+  // O BetterAuth valida a origem contra a baseURL. 127.0.0.1 é a mesma máquina
+  // que localhost, e é a porta de entrada usada quando o navegador força HTTPS
+  // em localhost por HSTS.
+  trustedOrigins: ["http://127.0.0.1:3000"],
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,

@@ -30,6 +30,10 @@ export function SignUpForm() {
   return (
     <form
       noValidate
+      // Se o JS falhar ou ainda não tiver hidratado, o navegador faz o submit
+      // nativo. Com o padrão (GET) a senha iria para a URL, o histórico e os
+      // logs de acesso; com POST, não.
+      method="post"
       onSubmit={form.handleSubmit(({ name, email, password }) =>
         // A confirmação de senha só existe no cliente e não é enviada.
         execute({ name, email, password }),

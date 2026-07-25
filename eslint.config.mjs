@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Estado local de ferramentas de agente, não faz parte do produto.
+    ".remember/**",
   ]),
 ]);
 
