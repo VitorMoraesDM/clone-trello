@@ -24,8 +24,11 @@
 .DS_Store
 *.pem
 
-# claude code session state
+# agent tooling (session state e config local, nao faz parte do produto)
 /.remember
+/.agents
+/.claude
+/skills-lock.json
 
 # debug
 npm-debug.log*
