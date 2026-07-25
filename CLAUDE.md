@@ -1,36 +1,104 @@
-# CLAUDE.md
+## Produto
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## Overview
-
-Next.js 16 App Router project bootstrapped with `create-next-app`, using React 19, Tailwind CSS v4, and TypeScript. Persistence is **PostgreSQL** accessed through **Drizzle ORM**. Currently at the starter stage — only the default `app/` scaffold exists.
+Essa aplicação é um clone do Trello, onde o usuário consegue gerenciar colunas e cards, e mover os cards entre as colunas.
 
 ## Commands
 
-Package manager is **pnpm** (see `pnpm-workspace.yaml` / `pnpm-lock.yaml`) — use `pnpm`, not npm/yarn.
+Package manager: **pnpm** (see `pnpm-lock.yaml`).
 
-- `pnpm dev` — start the dev server at http://localhost:3000
+- `pnpm dev` — start Next.js dev server
 - `pnpm build` — production build
-- `pnpm start` — serve the production build
-- `pnpm lint` — run ESLint
+- `pnpm start` — run built app
+- `pnpm lint` — ESLint (`eslint-config-next`)
+- `pnpm exec tsc --noEmit` — typecheck
+- `pnpm exec prettier --write .` — format with Prettier
+- `pnpm test` — Vitest (run once); `pnpm test:watch` para modo watch
+- `docker compose up -d` — sobe o Postgres local (necessário para dev e migrations)
+- `pnpm db:generate` — gera migration a partir de `db/schema/`
+- `pnpm db:migrate` — aplica as migrations pendentes
 
-No test framework is configured yet.
+## Tests
 
-## Architecture
+Runner: **Vitest** + jsdom (`vitest.config.ts`, setup em `vitest.setup.ts`). Testes ficam ao lado do arquivo testado, como `*.test.ts(x)`.
 
-- **App Router** under `app/` — `layout.tsx` is the root layout (loads Geist / Geist Mono fonts via `next/font/google` and sets html/body classes); `page.tsx` is the home route.
-- **Styling** is Tailwind CSS v4, configured entirely in CSS via `app/globals.css` (`@import "tailwindcss"` + `@theme inline`) rather than a `tailwind.config` file. PostCSS uses `@tailwindcss/postcss` (`postcss.config.mjs`). Theme tokens (`--background`, `--foreground`, font vars) are defined in `globals.css` with dark mode via `prefers-color-scheme`.
-- **Path alias**: `@/*` maps to the project root (`tsconfig.json`).
-- **ESLint** is flat-config (`eslint.config.mjs`) extending `eslint-config-next` core-web-vitals + typescript presets.
+- **SEMPRE** use **React Testing Library** e a skill `react-testing-library` ao escrever testes.
+- Foque em testar **componentes** (renderização, interação do usuário, acessibilidade via queries por role/label/text).
+- Banco de dados **sempre mockado** nos testes. Nunca suba container/DB real — mocke o client/queries diretamente no teste.
+- Mocke o client Drizzle (`db`) diretamente. Não use `pg-mem` nem container.
+- Em testes de formulário, mocke o **módulo de Server Actions** (`vi.mock("@/actions/…")`). Assim o `db` nunca é importado e o `useAction` real continua sendo exercitado. Veja `components/auth/login-form.test.tsx`.
+- **SEMPRE** valide o trabalho feito rodando os testes antes de considerar a tarefa concluída.
 
-## Database
+## Stack
 
-- **PostgreSQL** is the database; **Drizzle ORM** is the only data-access layer — do not add another ORM or write raw SQL clients alongside it.
-- Schema lives in TypeScript (Drizzle schema files) and is the source of truth; migrations are generated from it with `drizzle-kit`, never written by hand against the DB.
-- Connection string comes from the environment (`DATABASE_URL`) — never hardcode credentials.
-- Not installed/configured yet: no `drizzle-orm`/`drizzle-kit` dependencies, `drizzle.config.ts`, schema files, or migrations exist in the repo so far.
+- Next.js 16 (App Router) + React 19
+- TypeScript (strict), Tailwind CSS v4 (`@tailwindcss/postcss`)
+- ESLint (`eslint-config-next`) + Prettier
+- Zod v4 para schemas/validação
+- PostgreSQL (banco de dados)
+- Drizzle ORM + drizzle-kit (migrations/schema)
+- BetterAuth (autenticação por e-mail e senha)
+- shadcn/ui (preset `radix-nova`) + React Hook Form + next-safe-action
+- Vitest + React Testing Library (testes)
 
-## Notes
+Path alias: `@/*` → `./*` (raiz do projeto).
 
-- `sharp` and `unrs-resolver` builds are disabled in `pnpm-workspace.yaml` (`allowBuilds` / `ignoredBuiltDependencies`).
+## Project Conventions (from project rules)
+
+### MCPs
+
+- **SEMPRE** use Context7 MCP para buscas em documentação de bibliotecas/frameworks/SDKs.
+
+### Interfaces / UI
+
+- **SEMPRE** use a skill `frontend-design` ao criar/desenhar interfaces (páginas, telas, componentes visuais novos).
+
+### Componentes
+
+- Prefira componentes do **shadcn/ui**. Antes de criar um novo, verifique via Context7 se já existe um shadcn equivalente; se existir, instale-o.
+- Extraia componentes/funções reutilizáveis para evitar duplicação.
+
+### Formulários
+
+- **SEMPRE** React Hook Form + Zod.
+- **SEMPRE** escreva mensagens de erro de validação Zod em **português brasileiro**, de forma amigável e acionável. Exemplos: `"Este campo é obrigatório."`, `"E-mail inválido."`, `"Deve ter pelo menos 8 caracteres."`. Nunca deixe mensagens padrão em inglês do Zod aparecerem para o usuário. Schemas internos/servidor (env, webhooks, UUIDs internos) estão isentos.
+- **NUNCA** use APIs de string depreciadas do Zod v4 (`z.string().email()`, `z.string().url()`, `z.string().uuid()`, `z.string().cuid()`, `z.string().ip()`, etc). Use os top-level equivalentes: `z.email()`, `z.url()`, `z.uuid()`, `z.cuid()`, `z.ipv4()`/`z.ipv6()`. Passe a mensagem customizada como argumento: `z.email("E-mail inválido.")`.
+
+### Estilização
+
+- **NUNCA** use cores hard-coded do Tailwind. **SEMPRE** use as variáveis de tema definidas em `app/globals.css`.
+- Dark mode é por classe (`.dark`), não por `prefers-color-scheme`. Ao criar um token novo, defina em `:root` **e** em `.dark`.
+- O verde-limão (`--primary`) é a única cor saturada do produto e é usado com parcimônia: ações primárias e o card em movimento. Texto por cima sempre em `--primary-foreground` (tinta escura).
+
+### Datas
+
+- **SEMPRE** use **dayjs** para formatar e manipular datas em qualquer parte da aplicação. Nunca use `Date` nativo, `toLocaleDateString`, `toISOString` ou similares para apresentação de datas ao usuário.
+
+### Banco de Dados
+
+- **SEMPRE** use **Drizzle ORM** para queries e schema. Nunca SQL cru exceto em migrations geradas.
+- Schemas em `db/schema/` (um arquivo por tabela/domínio), client em `db/index.ts`.
+- Migrations via `drizzle-kit generate` + `drizzle-kit migrate`. Nunca edite SQL gerado à mão.
+- Tipos inferidos via `$inferSelect` / `$inferInsert` — nunca redeclare manualmente.
+- Use Context7 (`/drizzle-team/drizzle-orm`) antes de escrever query não-trivial.
+
+### Server Actions
+
+- **SEMPRE** crie Server Actions com `next-safe-action`, a partir do `actionClient` de `lib/safe-action.ts`.
+- Actions ficam em `actions/` (um arquivo por domínio) e recebem o schema via `.inputSchema()`.
+- Chame `redirect()` **fora** do `try/catch`: ele sinaliza navegação lançando uma exceção de controle do Next, que não pode ser tratada como erro.
+
+### Autenticação
+
+- Config do servidor em `lib/auth.ts`. O plugin `nextCookies()` tem que ser **sempre o último** do array `plugins` — é ele que grava o cookie quando o login roda dentro de uma Server Action.
+- Formulários nunca chamam o BetterAuth direto: passam pelas actions de `actions/auth.ts`.
+- **NUNCA** deixe mensagem de erro do BetterAuth (que vem em inglês) chegar à tela. Traduza pelo mapa de `lib/auth-errors.ts`; código não mapeado cai na mensagem genérica.
+- A checagem de sessão que vale é a de `app/(app)/layout.tsx` (`auth.api.getSession`). O `proxy.ts` só olha a presença do cookie, para evitar flash de tela errada — não é camada de segurança.
+
+### Rotas
+
+- Route groups: `app/(auth)/` para login e cadastro, `app/(app)/` para a área autenticada.
+- No Next 16 o `middleware.ts` está depreciado: use `proxy.ts` na raiz, exportando uma função chamada `proxy`.
+
+### TypeScript
+
+- **NUNCA** use any.
